@@ -1,25 +1,56 @@
-const express = require('express')
+// IMPORTS 
+
+import express from "express"
+import bodyParser from 'body-parser'
+import mongoose from 'mongoose'
+import cors from "cors"
+import dotenv from "dotenv"
+import multer from "multer"
+import helmet from "helmet"
+import morgan from "morgan"
+import path from "path"
+import { fileURLToPath } from "url"
+import authRoutes from "./routes/auth.js"
+import { register } from "./controllers/auth.js"
+
+// CONFIG
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+dotenv.config()
 const app = express()
-const cors = require('cors')
-const axios = require('axios')
-
 app.use(express.json())
+app.use(helmet())
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin"}))
+app.use(morgan("common"))
+app.use(bodyParser.json({ limit: "30mb", extended: true }))
+app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }))
 app.use(cors())
+app.use("/assets", express.static(path.join(__dirname, 'public/assets')))
 
-let response = null;
-let riotKey = 'RGAPI-0bec7225-70b8-4f1d-a21a-53b1030b2d34'
+// FILE STORAGE
 
-const callSummByName = async (name) => {
-  try {
-    const newResponse = await axios.get(
-      `https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/${name}?${riotKey}`,
-    );
-    const data = await newResponse.data;
-    return data;
-  } catch (err) {
-    console.log(err)
-    throw err
-  }
-}
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, "public/assets")
+    },
+    filename: function (req, file, cb) {
+      cb(null, file.originalname)
+    }
+})
 
-console.log(callSummByName('AgorLePuissant'))
+const upload = multer({ storage })
+
+// FILE ROUTES
+
+app.post("/auth/register", upload.single("picture"), register)
+
+// MONGOOSE 
+
+const PORT = process.env.PORT || 6001;
+mongoose.connect(process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => {
+  app.listen(PORT, () => console.log('Server running on port 3001'))
+}).catch((error) => console.log(`${error} did not connect`))
