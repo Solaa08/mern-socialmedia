@@ -1,8 +1,16 @@
 import { createSlice } from "@reduxjs/toolkit"
+import UserModel from "../models/interfaces"
 
-const initialState = {
+interface InitialStateModel {
+    mode: string,
+    user: UserModel,
+    token: null,
+    posts: [],
+}
+
+const initialState: InitialStateModel = {
     mode: "light",
-    user: null,
+    user: [],
     token: null,
     posts: [],
 }
